@@ -1,0 +1,90 @@
+# {{ title }}
+
+**Projeto:** {{ project_name }}
+
+**Data e hora da execução:** {{ generated_at }}
+
+**Arquivo analisado:** `{{ input_path }}`
+
+## Configurações
+
+{{ config_table }}
+
+## Resumo das sequências
+
+{{ sequence_summary_table }}
+
+## Resumo da validação
+
+- Erros: {{ validation_error_count }}
+- Avisos: {{ validation_warning_count }}
+
+{{ validation_messages_table }}
+
+## Contexto técnico
+
+CRISPR-Cas9 é um sistema molecular estudado em biotecnologia e bioinformática. Neste relatório, ele é tratado apenas como contexto computacional para busca de padrões em sequências de DNA.
+
+PAM é uma pequena sequência adjacente ao possível alvo que, em sistemas Cas9, participa do reconhecimento da região. Para SpCas9, o padrão explorado neste MVP é NGG.
+
+NGG significa que a primeira posição pode ser A, C, G ou T, seguida por duas bases G.
+
+Um candidato in silico é uma sequência identificada por regra computacional. Ele representa um potencial sítio-alvo para triagem exploratória, sem validação experimental.
+
+A análise é exploratória porque usa padrões de sequência e filtros básicos. Ela não substitui análise de off-target, contexto biológico, validação experimental ou revisão especializada.
+
+## Resumo dos candidatos
+
+- Total de candidatos: {{ candidate_total }}
+
+### Candidatos por sequência
+
+{{ candidates_per_sequence_table }}
+
+### Candidatos por fita
+
+{{ candidates_by_strand_table }}
+
+### Status dos filtros
+
+{{ filter_status_table }}
+
+### Estatísticas de PAM
+
+{{ pam_stats_table }}
+
+### Métricas gerais
+
+{{ candidate_summary_table }}
+
+## Tabela de candidatos
+
+{{ candidates_table }}
+
+## Gráficos
+
+![Candidatos por sequência](../figures/candidates_per_sequence.png)
+
+![Distribuição de GC nos candidatos](../figures/gc_distribution_candidates.png)
+
+![Resumo dos status dos filtros](../figures/filter_status_summary.png)
+
+## Interpretação conservadora
+
+Os resultados devem ser interpretados como triagem exploratória. Os filtros básicos organizam candidatos in silico por critérios computacionais simples, como faixa de GC, presença de N, homopolímeros e duplicação exata no conjunto de entrada. O score heurístico serve apenas para priorização didática e rastreável dentro do relatório.
+
+## Limitações técnicas, biológicas e éticas
+
+{{ limitation_text }}
+
+Limitações adicionais:
+
+- O pipeline não executa análise completa de off-target em genoma de referência.
+- O pipeline não considera contexto cromossômico, expressão gênica, cromatina ou anotação funcional.
+- A presença de PAM não confirma atividade biológica.
+- Os filtros básicos não substituem ferramentas especializadas nem revisão por especialistas.
+- O relatório não deve ser usado como protocolo experimental.
+
+## Arquivos gerados
+
+{{ generated_files_list }}

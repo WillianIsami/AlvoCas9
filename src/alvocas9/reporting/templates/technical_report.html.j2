@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>{{ html_title }}</title>
+  <style>
+    body {
+      color: #1f2933;
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      margin: 32px;
+      max-width: 1180px;
+    }
+    h1 {
+      color: #102a43;
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      border-bottom: 1px solid #d9e2ec;
+      color: #243b53;
+      font-size: 20px;
+      margin-top: 28px;
+      padding-bottom: 4px;
+    }
+    h3 {
+      color: #334e68;
+      font-size: 16px;
+      margin-top: 18px;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 10px 0 18px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #d9e2ec;
+      padding: 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f4f8;
+      color: #102a43;
+    }
+    img {
+      border: 1px solid #d9e2ec;
+      display: block;
+      height: auto;
+      margin: 12px 0 22px;
+      max-width: 900px;
+      width: 100%;
+    }
+    code {
+      background: #f0f4f8;
+      padding: 1px 4px;
+    }
+    .meta {
+      color: #52606d;
+      margin: 2px 0;
+    }
+    .limit {
+      border-left: 4px solid #52606d;
+      padding-left: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ html_title }}</h1>
+  <p class="meta"><strong>Projeto:</strong> {{ html_project_name }}</p>
+  <p class="meta"><strong>Data e hora da execução:</strong> {{ html_generated_at }}</p>
+  <p class="meta"><strong>Arquivo analisado:</strong> <code>{{ html_input_path }}</code></p>
+
+  <h2>Configurações</h2>
+  {{ html_config_table }}
+
+  <h2>Resumo das sequências</h2>
+  {{ html_sequence_summary_table }}
+
+  <h2>Resumo da validação</h2>
+  <p>Erros: {{ html_validation_error_count }} | Avisos: {{ html_validation_warning_count }}</p>
+  {{ html_validation_messages_table }}
+
+  <h2>Contexto técnico</h2>
+  <p>CRISPR-Cas9 é um sistema molecular estudado em biotecnologia e bioinformática. Neste relatório, ele é tratado apenas como contexto computacional para busca de padrões em sequências de DNA.</p>
+  <p>PAM é uma pequena sequência adjacente ao possível alvo que, em sistemas Cas9, participa do reconhecimento da região. Para SpCas9, o padrão explorado neste MVP é NGG.</p>
+  <p>NGG significa que a primeira posição pode ser A, C, G ou T, seguida por duas bases G.</p>
+  <p>Um candidato in silico é uma sequência identificada por regra computacional. Ele representa um potencial sítio-alvo para triagem exploratória, sem validação experimental.</p>
+  <p>A análise é exploratória porque usa padrões de sequência e filtros básicos. Ela não substitui análise de off-target, contexto biológico, validação experimental ou revisão especializada.</p>
+
+  <h2>Resumo dos candidatos</h2>
+  <p>Total de candidatos: {{ html_candidate_total }}</p>
+
+  <h3>Candidatos por sequência</h3>
+  {{ html_candidates_per_sequence_table }}
+
+  <h3>Candidatos por fita</h3>
+  {{ html_candidates_by_strand_table }}
+
+  <h3>Status dos filtros</h3>
+  {{ html_filter_status_table }}
+
+  <h3>Estatísticas de PAM</h3>
+  {{ html_pam_stats_table }}
+
+  <h3>Métricas gerais</h3>
+  {{ html_candidate_summary_table }}
+
+  <h2>Tabela de candidatos</h2>
+  {{ html_candidates_table }}
+
+  <h2>Gráficos</h2>
+  <img alt="Candidatos por sequência" src="../figures/candidates_per_sequence.png">
+  <img alt="Distribuição de GC nos candidatos" src="../figures/gc_distribution_candidates.png">
+  <img alt="Resumo dos status dos filtros" src="../figures/filter_status_summary.png">
+
+  <h2>Interpretação conservadora</h2>
+  <p>Os resultados devem ser interpretados como triagem exploratória. Os filtros básicos organizam candidatos in silico por critérios computacionais simples, como faixa de GC, presença de N, homopolímeros e duplicação exata no conjunto de entrada. O score heurístico serve apenas para priorização didática e rastreável dentro do relatório.</p>
+
+  <h2>Limitações técnicas, biológicas e éticas</h2>
+  <p class="limit">{{ html_limitation_text }}</p>
+  <ul>
+    <li>O pipeline não executa análise completa de off-target em genoma de referência.</li>
+    <li>O pipeline não considera contexto cromossômico, expressão gênica, cromatina ou anotação funcional.</li>
+    <li>A presença de PAM não confirma atividade biológica.</li>
+    <li>Os filtros básicos não substituem ferramentas especializadas nem revisão por especialistas.</li>
+    <li>O relatório não deve ser usado como protocolo experimental.</li>
+  </ul>
+
+  <h2>Arquivos gerados</h2>
+  <ul>
+    {{ html_generated_files_list }}
+  </ul>
+</body>
+</html>
