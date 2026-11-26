@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from alvocas9.config import PipelineConfig
 from alvocas9.core.scanner import (
     ScanConfig,
@@ -60,6 +62,44 @@ def test_extract_candidates_from_both_strands_returns_candidate_dataclass() -> N
     assert candidate.protospacer_end_1based == 20
     assert candidate.pam_start_1based == 21
     assert candidate.pam_end_1based == 23
+
+
+def test_plus_strand_cut_site_is_three_bases_before_the_pam() -> None:
+    candidates = extract_candidates_from_both_strands("seq1", "A" * 20 + "AGG", ScanConfig())
+
+    candidate = candidates[0]
+    assert candidate.cut_site_1based == 17
+    assert candidate.pam_start_1based - candidate.cut_site_1based - 1 == 3
+
+
+def test_scan_sequence_rejects_an_invalid_strand() -> None:
+    with pytest.raises(ValueError, match="strand deve ser"):
+        scan_sequence_for_pam("ACGTAGG", sequence_id="seq1", strand="x")
+
+
+def test_relative_position_locates_the_candidate_in_the_sequence() -> None:
+    """A posicao relativa usa o ponto medio do candidato."""
+
+    inicio = extract_candidates_from_both_strands(
+        "seq1", "A" * 20 + "AGG" + "T" * 177, ScanConfig()
+    )
+    fim = extract_candidates_from_both_strands(
+        "seq1", "T" * 177 + "A" * 20 + "AGG", ScanConfig()
+    )
+
+    # Candidato em [1, 23] de uma sequencia de 200 bases: ponto medio 12.
+    assert inicio[0].full_candidate_start_1based == 1
+    assert inicio[0].relative_position_percent == 6.0
+
+    # Candidato em [178, 200]: ponto medio 189.
+    assert fim[0].full_candidate_end_1based == 200
+    assert fim[0].relative_position_percent == 94.5
+
+
+def test_cut_site_is_none_when_it_falls_outside_the_sequence() -> None:
+    candidates = extract_candidates_from_both_strands("seq1", "AA" + "AGG", ScanConfig(target_length=2))
+
+    assert candidates[0].cut_site_1based is None
 
 
 def test_plus_strand_skips_pam_without_upstream_bases(tmp_path: Path) -> None:

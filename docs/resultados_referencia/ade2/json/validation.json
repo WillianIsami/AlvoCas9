@@ -1,0 +1,28 @@
+{
+  "input_path": "data\\real\\ADE2_scerevisiae.fasta",
+  "valid": true,
+  "records": [
+    {
+      "identifier": "ADE2_YOR128C",
+      "description": "Saccharomyces cerevisiae S288C ADE2 (YOR128C) sequencia genomica chrXV:564476-566191 fita - assembly R64-1-1",
+      "length": 1716,
+      "sequence_sha256": "e8a7e4e218061b7b19f7d3551a5b411817e21f0fb3bc1c7e1c35fee27c68ba34"
+    }
+  ],
+  "global_errors": [],
+  "global_warnings": [],
+  "per_record_errors": {},
+  "per_record_warnings": {},
+  "errors": [],
+  "warnings": [],
+  "sequence_summaries": [
+    {
+      "sequence_id": "ADE2_YOR128C",
+      "length": 1716,
+      "n_count": 0,
+      "n_percent": 0.0,
+      "valid": true
+    }
+  ],
+  "record_count": 1
+}

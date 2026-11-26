@@ -31,6 +31,11 @@ Filtros e score
 CSV / JSON / PNG / HTML / Markdown / log
 ```
 
+A mesma visão geral está disponível como figura em
+`docs/figuras/arquitetura_pipeline.png`, gerada por
+`scripts/gerar_figura_arquitetura.py`. A figura é produzida por script, e não
+desenhada à mão, para poder ser regerada quando a estrutura mudar.
+
 ## Módulos e responsabilidades
 
 `src/alvocas9/cli.py`
@@ -39,7 +44,8 @@ Define os comandos `validate` e `analyze`. É a entrada principal do usuário.
 
 `src/alvocas9/config.py`
 
-Define `PipelineConfig`, que concentra parâmetros da execução.
+Define `PipelineConfig`, que concentra parâmetros da execução e valida seus
+valores antes do início da análise.
 
 `src/alvocas9/io/fasta_reader.py`
 
@@ -55,7 +61,9 @@ Contém funções básicas: reverso complementar, GC% e homopolímero máximo.
 
 `src/alvocas9/core/pam.py`
 
-Valida padrões PAM e converte IUPAC para regras de busca.
+Valida padrões PAM, converte IUPAC para regras de busca e localiza os PAMs.
+Mantém duas implementações equivalentes da busca, uma com expressão regular,
+usada pelo pipeline, e uma por varredura direta, usada como referência.
 
 `src/alvocas9/core/scanner.py`
 
@@ -84,12 +92,13 @@ Configura o log da execução.
 ## Fluxo de dados
 
 1. O usuário informa um FASTA.
-2. A CLI transforma argumentos em `PipelineConfig`.
+2. A CLI transforma argumentos em `PipelineConfig`, que valida os parâmetros.
 3. O validador lê e avalia o FASTA.
 4. Registros válidos seguem para o scanner.
 5. O scanner retorna candidatos brutos.
 6. Features e filtros enriquecem os candidatos.
 7. O gerador salva resultados em múltiplos formatos.
+8. O pipeline devolve um `RunSummary`, que a CLI imprime no terminal.
 
 ## Estrutura de pastas
 
@@ -124,6 +133,9 @@ results/         saídas geradas
 - Usar CLI como interface principal.
 - Usar coordenadas 1-based inclusivas na saída.
 - Tratar erro crítico de validação como bloqueio da análise.
+- Validar os parâmetros da execução antes de qualquer leitura de arquivo.
+- Registrar no log qualquer falha, prevista ou inesperada.
+- Manter a escrita em tela na CLI: o pipeline devolve um resumo, não imprime.
 - Registrar configuração e logs para reprodutibilidade.
 - Gerar relatórios com linguagem conservadora.
 

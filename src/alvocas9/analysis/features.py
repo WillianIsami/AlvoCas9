@@ -49,6 +49,11 @@ def characterize_candidates(
     candidates: list[dict[str, object]],
     config: object | None = None,
 ) -> list[dict[str, object]]:
-    """Calcula features, warnings, score e status em uma unica chamada."""
+    """Calcula features, warnings, score e status em uma unica chamada.
+
+    API auxiliar de conveniencia. O pipeline chama ``add_candidate_features``
+    e ``filters.apply_filters`` em sequencia, para registrar no log o estado
+    intermediario.
+    """
 
     return apply_filters(add_candidate_features(candidates), config)

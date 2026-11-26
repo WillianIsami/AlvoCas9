@@ -1,0 +1,16 @@
+{
+  "input_path": "data\\real\\ADE2_scerevisiae.fasta",
+  "output_dir": "docs\\resultados_referencia\\ade2",
+  "pam": "NGG",
+  "pam_position": "3linha",
+  "target_length": 20,
+  "min_gc": 40.0,
+  "max_gc": 60.0,
+  "max_homopolymer": 4,
+  "allow_n": false,
+  "min_sequence_length": 20,
+  "alvocas9_version": "0.1.0",
+  "python_version": "3.11.9",
+  "executed_at": "2026-11-26 17:01:14 -03",
+  "input_sha256": "f0cc9a30b55337c975228bfcbf0a371954cc4b55f3eb12c6b78746ead23318c0"
+}

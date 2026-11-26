@@ -1,6 +1,13 @@
 from pathlib import Path
 
-from alvocas9.analysis.filters import APPROVED, CAUTION, FAILED, FilterConfig, apply_filters
+from alvocas9.analysis.filters import (
+    APPROVED,
+    CAUTION,
+    FAILED,
+    FilterConfig,
+    apply_filters,
+    rank_candidates,
+)
 from alvocas9.config import PipelineConfig
 
 
@@ -111,6 +118,54 @@ def test_filters_status_failed_when_score_below_50_with_allowed_n() -> None:
 
     assert row["heuristic_score"] == 25
     assert row["filter_status"] == FAILED
+
+
+def test_rank_candidates_sorts_by_score_descending() -> None:
+    candidates = [
+        _ranked(70, "seq1", "+", 1),
+        _ranked(100, "seq1", "+", 5),
+        _ranked(85, "seq1", "+", 3),
+    ]
+
+    assert [row["heuristic_score"] for row in rank_candidates(candidates)] == [100, 85, 70]
+
+
+def test_rank_candidates_breaks_ties_deterministically() -> None:
+    candidates = [
+        _ranked(100, "seq2", "+", 10),
+        _ranked(100, "seq1", "-", 50),
+        _ranked(100, "seq1", "+", 90),
+        _ranked(100, "seq1", "+", 20),
+    ]
+
+    ordenados = [
+        (row["sequence_id"], row["strand"], row["full_candidate_start_1based"])
+        for row in rank_candidates(candidates)
+    ]
+
+    assert ordenados == [
+        ("seq1", "+", 20),
+        ("seq1", "+", 90),
+        ("seq1", "-", 50),
+        ("seq2", "+", 10),
+    ]
+
+
+def test_rank_candidates_keeps_the_original_list_untouched() -> None:
+    candidates = [_ranked(50, "seq1", "+", 1), _ranked(100, "seq1", "+", 2)]
+
+    rank_candidates(candidates)
+
+    assert [row["heuristic_score"] for row in candidates] == [50, 100]
+
+
+def _ranked(score: int, sequence_id: str, strand: str, start: int) -> dict[str, object]:
+    return {
+        "heuristic_score": score,
+        "sequence_id": sequence_id,
+        "strand": strand,
+        "full_candidate_start_1based": start,
+    }
 
 
 def _candidate(gc_percent: float, has_n: bool, max_homopolymer_run: int, duplicate_count: int) -> dict[str, object]:

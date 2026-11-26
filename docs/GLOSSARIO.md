@@ -60,6 +60,10 @@
 
 **RNA guia ou sgRNA:** molécula que, em sistemas CRISPR, orienta Cas9. O AlvoCas9 não projeta sgRNA validado.
 
+**BED:** formato textual para intervalos genômicos, com coordenadas 0-based semiabertas. É a convenção oposta à usada nas tabelas do AlvoCas9, que são 1-based inclusivas.
+
+**Sítio de corte:** posição onde a Cas9 produziria o corte de dupla-fita. Para SpCas9, fica cerca de 3 pares de base antes do PAM. No AlvoCas9 é um valor calculado por premissa do modelo, não uma medição.
+
 **Score heurístico:** pontuação simples baseada em penalidades por GC, N, homopolímero e duplicação.
 
 **Sequência biológica:** representação linear de DNA, RNA ou proteína.

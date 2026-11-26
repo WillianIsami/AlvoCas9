@@ -48,3 +48,10 @@ def test_read_fasta_keeps_invalid_characters_for_validator(tmp_path: Path) -> No
     result = read_fasta(fasta)
 
     assert result.records[0].sequence == "ACX GT"
+
+
+def test_read_fasta_reports_unreadable_path(tmp_path: Path) -> None:
+    result = read_fasta(tmp_path)
+
+    assert result.records == []
+    assert any("Nao foi possivel ler o arquivo FASTA" in error for error in result.parse_errors)

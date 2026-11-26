@@ -108,12 +108,16 @@
   {{ html_candidate_summary_table }}
 
   <h2>Tabela de candidatos</h2>
+  {{ html_candidates_table_note }}
   {{ html_candidates_table }}
+  <p>A coluna <code>cut_site_1based</code> indica a posição da base imediatamente anterior ao corte previsto, na sequência original. O corte ocorre entre essa posição e a seguinte. É uma premissa do modelo para SpCas9, que corta cerca de 3 pares de base antes do PAM, e não uma medição.</p>
+  <p>A coluna <code>relative_position_percent</code> indica onde o ponto médio do candidato está na sequência, em porcentagem. É uma indicação de posição, não um critério de qualidade, e não entra no score.</p>
 
   <h2>Gráficos</h2>
   <img alt="Candidatos por sequência" src="../figures/candidates_per_sequence.png">
   <img alt="Distribuição de GC nos candidatos" src="../figures/gc_distribution_candidates.png">
   <img alt="Resumo dos status dos filtros" src="../figures/filter_status_summary.png">
+  <img alt="Distribuição dos candidatos ao longo da sequência" src="../figures/candidate_density.png">
 
   <h2>Interpretação conservadora</h2>
   <p>Os resultados devem ser interpretados como triagem exploratória. Os filtros básicos organizam candidatos in silico por critérios computacionais simples, como faixa de GC, presença de N, homopolímeros e duplicação exata no conjunto de entrada. O score heurístico serve apenas para priorização didática e rastreável dentro do relatório.</p>

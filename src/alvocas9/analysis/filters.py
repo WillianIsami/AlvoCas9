@@ -25,6 +25,29 @@ class FilterConfig:
         )
 
 
+def rank_candidates(candidates: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Ordena os candidatos por score heuristico decrescente.
+
+    Empates sao resolvidos por identificador da sequencia, fita e posicao
+    inicial, nessa ordem, para que duas execucoes sobre a mesma entrada
+    produzam exatamente a mesma ordem de saida.
+
+    A ordenacao serve para leitura: o relatorio mostra primeiro os candidatos
+    que nao acionaram alertas. Ela nao significa que os primeiros sejam
+    melhores em qualquer sentido biologico.
+    """
+
+    return sorted(
+        candidates,
+        key=lambda candidate: (
+            -int(candidate["heuristic_score"]),
+            str(candidate.get("sequence_id", "")),
+            str(candidate.get("strand", "")),
+            int(candidate.get("full_candidate_start_1based", 0)),
+        ),
+    )
+
+
 def apply_filters(candidates: list[dict[str, object]], config: object | None = None) -> list[dict[str, object]]:
     """Aplica filtros e score heuristico simples."""
 

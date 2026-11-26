@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 
 from alvocas9.config import PipelineConfig
 from alvocas9.core.pam import find_pam_positions, validate_pam_pattern
 from alvocas9.core.sequence_utils import reverse_complement
 from alvocas9.io.fasta_reader import FastaRecord
+
+
+CAS9_CUT_OFFSET_FROM_PAM = 3
+"""Distancia, em pares de base, entre o sitio de corte e o PAM.
+
+Para a SpCas9, o corte de dupla-fita ocorre cerca de 3 pb a 5' do PAM, ou seja,
+entre as posicoes 17 e 18 de um protospacer de 20 nucleotideos. Este valor e
+uma premissa do modelo, valida para sistemas com PAM a 3' do protospacer, e nao
+uma medicao feita pelo pipeline.
+"""
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,13 +50,38 @@ class Candidate:
     protospacer_end_1based: int
     pam_start_1based: int
     pam_end_1based: int
+    cut_site_1based: int | None
     full_candidate_start_1based: int
     full_candidate_end_1based: int
+    relative_position_percent: float
     target_length: int
     pam_pattern: str
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        """Converte o candidato em dicionario, campo a campo.
+
+        Escrito manualmente em vez de usar ``dataclasses.asdict`` porque
+        ``asdict`` faz copia recursiva de cada campo. Com dezenas de milhares
+        de candidatos, a diferenca e mensuravel: em uma entrada de 50 kb, a
+        conversao respondia por mais tempo do que a propria busca de PAM.
+        """
+
+        return {
+            "sequence_id": self.sequence_id,
+            "strand": self.strand,
+            "protospacer_sequence_5to3": self.protospacer_sequence_5to3,
+            "pam_sequence_5to3": self.pam_sequence_5to3,
+            "protospacer_start_1based": self.protospacer_start_1based,
+            "protospacer_end_1based": self.protospacer_end_1based,
+            "pam_start_1based": self.pam_start_1based,
+            "pam_end_1based": self.pam_end_1based,
+            "cut_site_1based": self.cut_site_1based,
+            "full_candidate_start_1based": self.full_candidate_start_1based,
+            "full_candidate_end_1based": self.full_candidate_end_1based,
+            "relative_position_percent": self.relative_position_percent,
+            "target_length": self.target_length,
+            "pam_pattern": self.pam_pattern,
+        }
 
 
 @dataclass(slots=True)
@@ -136,14 +171,21 @@ def extract_candidates_from_both_strands(
     sequence: str,
     config: ScanConfig | None = None,
 ) -> list[Candidate]:
-    """Extrai candidatos nas fitas direta e reversa complementar."""
+    """Extrai candidatos nas fitas direta e reversa complementar.
+
+    API auxiliar, usada pelos testes para inspecionar os candidatos como
+    objetos ``Candidate``. O pipeline usa ``scan_records``.
+    """
 
     candidates, _stats = _extract_candidates_with_stats(sequence_id, sequence, config or ScanConfig())
     return candidates
 
 
 def scan_records(records: list[FastaRecord], config: PipelineConfig) -> ScanResult:
-    """Varre todos os registros nas fitas direta e reversa complementar."""
+    """Varre todos os registros nas fitas direta e reversa complementar.
+
+    Esta e a funcao usada pelo pipeline, chamada por ``cli.run_pipeline``.
+    """
 
     scan_config = ScanConfig.from_pipeline_config(config)
     result = ScanResult()
@@ -159,7 +201,11 @@ def scan_records(records: list[FastaRecord], config: PipelineConfig) -> ScanResu
 
 
 def scan_record(record: FastaRecord, config: PipelineConfig) -> tuple[list[dict[str, object]], ScanStats]:
-    """Adaptador usado pelo pipeline atual para varrer um registro FASTA."""
+    """Varre um unico registro FASTA e devolve candidatos e estatisticas.
+
+    API auxiliar, usada pelos testes de coordenadas para isolar uma sequencia.
+    O pipeline usa ``scan_records``, que percorre todos os registros.
+    """
 
     candidates, stats = _extract_candidates_with_stats(
         record.sequence_id,
@@ -238,6 +284,9 @@ def _candidate_from_hit(
         )
         pam_start_1, pam_end_1 = hit.pam_start_1based, hit.pam_end_1based
 
+    full_start_1 = min(prot_start_1, pam_start_1)
+    full_end_1 = max(prot_end_1, pam_end_1)
+
     return Candidate(
         sequence_id=hit.sequence_id,
         strand=hit.strand,
@@ -247,11 +296,69 @@ def _candidate_from_hit(
         protospacer_end_1based=prot_end_1,
         pam_start_1based=pam_start_1,
         pam_end_1based=pam_end_1,
-        full_candidate_start_1based=min(prot_start_1, pam_start_1),
-        full_candidate_end_1based=max(prot_end_1, pam_end_1),
+        cut_site_1based=_cut_site_1based(hit.strand, pam_start_1, pam_end_1, original_length),
+        full_candidate_start_1based=full_start_1,
+        full_candidate_end_1based=full_end_1,
+        relative_position_percent=_relative_position_percent(
+            full_start_1, full_end_1, original_length
+        ),
         target_length=config.target_length,
         pam_pattern=hit.pam_pattern,
     )
+
+
+def _relative_position_percent(
+    start_1based: int,
+    end_1based: int,
+    original_length: int,
+) -> float:
+    """Posicao do ponto medio do candidato na sequencia, em porcentagem.
+
+    Indica se o sitio esta perto do inicio, no meio ou perto do fim da
+    sequencia de entrada.
+
+    A interpretacao usual em desenho de guias e que sitios na porcao inicial da
+    regiao codificante tendem a ser preferidos para nocaute, porque uma
+    interrupcao precoce tem mais chance de inativar a proteina. Essa leitura so
+    vale quando a entrada e de fato um gene na orientacao codificante, o que o
+    pipeline nao tem como verificar. Por isso o campo e uma indicacao de
+    posicao, e nao um criterio de qualidade, e nao entra no score.
+    """
+
+    if original_length <= 0:
+        return 0.0
+    meio = (start_1based + end_1based) / 2
+    return round(meio / original_length * 100, 1)
+
+
+def _cut_site_1based(
+    strand: str,
+    pam_start_1based: int,
+    pam_end_1based: int,
+    original_length: int,
+) -> int | None:
+    """Calcula o sitio de corte previsto, na sequencia original.
+
+    Devolve a posicao da base imediatamente anterior ao corte: o corte ocorre
+    entre a posicao devolvida e a seguinte.
+
+    Na fita direta, o PAM esta a jusante do protospacer, e o corte fica
+    ``CAS9_CUT_OFFSET_FROM_PAM`` bases antes do inicio do PAM. Na fita reversa
+    complementar, o PAM aparece em coordenadas menores da sequencia original,
+    entao o corte fica a mesma distancia depois do fim do PAM.
+
+    Devolve ``None`` quando a posicao cairia fora da sequencia, o que pode
+    ocorrer com protospacers muito curtos ou PAM nas extremidades.
+    """
+
+    if strand == "+":
+        position = pam_start_1based - CAS9_CUT_OFFSET_FROM_PAM - 1
+    else:
+        position = pam_end_1based + CAS9_CUT_OFFSET_FROM_PAM
+
+    if 1 <= position <= original_length - 1:
+        return position
+    return None
 
 
 def _map_rc_interval_to_original(start_0: int, end_0: int, original_length: int) -> tuple[int, int]:

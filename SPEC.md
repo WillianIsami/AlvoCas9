@@ -147,7 +147,8 @@ RNF08 - Ter documentação em português brasileiro.
 
 RNF09 - Gerar saídas reprodutíveis.
 
-RNF10 - Manter configuração da execução salva em arquivo.
+RNF10 - Manter configuração da execução salva em arquivo, junto com versão do
+software, versão do Python, data e hora e hash SHA-256 da entrada.
 
 RNF11 - Evitar linguagem que indique recomendação clínica, terapêutica ou experimental.
 
@@ -256,6 +257,7 @@ Configurações de entrada:
 - Caminho do FASTA.
 - Diretório de saída.
 - PAM, padrão `NGG`.
+- Posição do PAM, padrão `3linha` e único valor aceito.
 - Tamanho do protospacer, padrão 20.
 - GC mínimo, padrão 40%.
 - GC máximo, padrão 60%.
@@ -272,6 +274,7 @@ results/
 ├── tables/
 │   ├── sequences_summary.csv
 │   ├── candidates.csv
+│   ├── candidates.bed
 │   └── validation_summary.csv
 ├── json/
 │   ├── validation.json
@@ -280,7 +283,8 @@ results/
 ├── figures/
 │   ├── candidates_per_sequence.png
 │   ├── gc_distribution_candidates.png
-│   └── filter_status_summary.png
+│   ├── filter_status_summary.png
+│   └── candidate_density.png
 ├── reports/
 │   ├── technical_report.html
 │   └── technical_report.md
@@ -298,8 +302,10 @@ Campos obrigatórios em `candidates.csv`:
 - `protospacer_end_1based`
 - `pam_start_1based`
 - `pam_end_1based`
+- `cut_site_1based`
 - `full_candidate_start_1based`
 - `full_candidate_end_1based`
+- `relative_position_percent`
 - `target_length`
 - `pam_pattern`
 - `gc_percent`
@@ -313,7 +319,7 @@ Campos obrigatórios em `candidates.csv`:
 
 ## 10. Regras de validação FASTA
 
-Regras com erro:
+Regras com erro, que interrompem a análise antes da busca de PAM:
 
 - Arquivo inexistente.
 - Caminho não é arquivo.
@@ -324,11 +330,16 @@ Regras com erro:
 - Identificador duplicado.
 - Sequência vazia.
 - Caracteres fora do conjunto permitido.
-- Sequência menor que o tamanho mínimo.
 
-Regras com aviso:
+Regras com aviso, que não interrompem a análise:
 
+- Sequência menor que o tamanho mínimo configurado.
 - Presença de N quando `allow_n` estiver habilitado.
+- Proporção de N igual ou superior ao limite configurado.
+
+O tamanho mínimo é aviso, e não erro, porque uma sequência curta continua
+analisável: ela apenas não produz candidatos quando não há bases suficientes
+antes do PAM, situação já contabilizada nas estatísticas do scanner.
 
 Caracteres permitidos:
 
@@ -339,7 +350,12 @@ Normalizações:
 
 - Converter bases para maiúsculas.
 - Ignorar linhas vazias.
-- Remover espaços e tabulações em linhas de sequência.
+
+O leitor FASTA **não** remove espaços, tabulações ou outros caracteres das
+linhas de sequência. Eles são preservados de propósito, para que a validação
+possa reportá-los como caracteres não permitidos, em vez de corrigir a
+entrada em silêncio. Espaço e tabulação são exibidos nas mensagens como
+`<espaco>` e `<tab>`.
 
 ## 11. Regras de busca PAM
 
@@ -361,6 +377,15 @@ Busca:
 - Calcular reverso complementar e buscar na fita reversa complementar.
 - Validar padrão PAM antes de executar.
 
+Posição do PAM:
+
+- O protospacer é sempre extraído a 5' do PAM, premissa válida para SpCas9.
+- O parâmetro `pam_position` aceita apenas `3linha`. Qualquer outro valor é
+  recusado com mensagem explicando a limitação.
+- A premissa fica declarada na interface, e não apenas na documentação, para
+  que um padrão de sistema com PAM a 5', como o `TTTV` de Cas12a, não produza
+  resultado silenciosamente sem sentido.
+
 Códigos IUPAC planejados para PAM:
 
 - Obrigatórios: A, C, G, T, N.
@@ -376,6 +401,20 @@ Para cada PAM encontrado:
 - Extrair protospacer de `pam_start - target_length` até `pam_start - 1`.
 - Informar protospacer sempre em orientação 5'->3' da fita analisada.
 - Informar PAM sempre em orientação 5'->3' da fita analisada.
+- Informar o sítio de corte previsto, mapeado para a sequência original.
+
+Sítio de corte:
+
+- Para SpCas9, o corte de dupla-fita ocorre cerca de 3 pares de base a 5' do
+  PAM, isto é, entre as posições 17 e 18 de um protospacer de 20 nucleotídeos.
+- O campo `cut_site_1based` informa a posição da base imediatamente anterior ao
+  corte, na sequência original. O corte ocorre entre essa posição e a seguinte.
+- Na fita direta, a posição é `pam_start_1based - 4`. Na fita reversa
+  complementar, o PAM aparece em coordenadas menores, e a posição é
+  `pam_end_1based + 3`.
+- O campo fica vazio quando a posição cairia fora da sequência.
+- O valor é uma premissa do modelo, válida para sistemas com PAM a 3', e não
+  uma medição feita pelo pipeline.
 
 Coordenadas:
 
@@ -408,14 +447,30 @@ Status permitidos:
 - `requer cautela`
 - `reprovado nos filtros básicos`
 
-Termos proibidos para candidatos:
+Linguagem dos relatórios.
 
-- seguro.
-- eficiente.
-- clínico.
-- terapêutico.
-- recomendado.
-- validado experimentalmente.
+A verificação é automatizada e atua sobre **frases afirmativas** completas. O
+gerador recusa escrever o relatório se o texto produzido contiver qualquer uma
+delas, conforme `FORBIDDEN_REPORT_TERMS` em `reporting/report_generator.py`:
+
+- `guia recomendado`
+- `guia validado`
+- `alvo seguro`
+- `alvo recomendado`
+- `aplicação clínica`
+- `uso terapêutico`
+- `eficiência garantida`
+- `pronto para uso experimental`
+
+A verificação é por frase, e não por palavra isolada, porque o próprio texto
+obrigatório de limitação contém as palavras "clínica" e "terapêutica" ao negar
+essas aplicações. Bloquear palavras isoladas impediria o relatório de declarar
+suas próprias limitações.
+
+Orientação de redação, aplicada pelo autor e não verificável por software: ao
+descrever candidatos, evitar os adjetivos "seguro", "eficiente", "recomendado"
+e "validado", bem como os qualificadores "clínico" e "terapêutico". Os termos
+preferidos estão em `docs/LIMITACOES_ETICAS_E_TECNICAS.md`.
 
 Score heurístico:
 
@@ -427,6 +482,16 @@ Score heurístico:
 - Limitar entre 0 e 100.
 
 O score não prediz eficiência real de edição.
+
+Ordenação e apresentação:
+
+- Os candidatos são ordenados por score decrescente antes da escrita.
+- Empates são resolvidos por identificador da sequência, fita e posição
+  inicial, para que a ordem seja determinística.
+- A tabela do relatório técnico mostra no máximo 50 candidatos, com nota
+  indicando o total. As tabelas CSV e JSON permanecem completas.
+- A ordenação serve para leitura. Ela não estabelece preferência biológica
+  entre os candidatos.
 
 ## 14. Limitações técnicas, biológicas e éticas
 

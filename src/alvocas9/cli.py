@@ -2,11 +2,18 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections import Counter
+from dataclasses import dataclass
+from logging import Logger
 from pathlib import Path
 
 from alvocas9.analysis.features import add_candidate_features, build_sequence_summary
-from alvocas9.analysis.filters import apply_filters
-from alvocas9.config import PipelineConfig
+from alvocas9.analysis.filters import apply_filters, rank_candidates
+from alvocas9.config import (
+    PAM_POSITION_3_LINHA,
+    PipelineConfig,
+    validate_min_sequence_length,
+)
 from alvocas9.core.pam import validate_pam_pattern
 from alvocas9.core.scanner import scan_records
 from alvocas9.reporting.report_generator import (
@@ -15,6 +22,31 @@ from alvocas9.reporting.report_generator import (
 )
 from alvocas9.utils.logging_utils import configure_logging
 from alvocas9.validation.dna_validator import validate_fasta
+
+
+class ValidationFailedError(ValueError):
+    """Erro critico de validacao do FASTA.
+
+    Distingue a interrupcao prevista do pipeline, que ja foi registrada no log
+    e nos arquivos de saida, de uma falha inesperada em qualquer outra etapa.
+    """
+
+
+@dataclass(frozen=True, slots=True)
+class RunSummary:
+    """Resumo de uma execucao bem-sucedida do pipeline.
+
+    O pipeline nao escreve na tela: ele devolve este resumo e a CLI o
+    apresenta. Assim o usuario sabe o que aconteceu sem precisar abrir o log.
+    """
+
+    output_dir: Path
+    report_path: Path
+    sequences_read: int
+    validation_warnings: int
+    pams_found: int
+    candidates_extracted: int
+    candidates_by_status: dict[str, int]
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -33,6 +65,14 @@ def build_parser() -> argparse.ArgumentParser:
     analyze_parser.add_argument("--input", required=True, type=Path, help="Arquivo FASTA de entrada.")
     analyze_parser.add_argument("--output", required=True, type=Path, help="Diretorio de resultados.")
     analyze_parser.add_argument("--pam", default="NGG", help="Padrao PAM em IUPAC. Padrao: NGG.")
+    analyze_parser.add_argument(
+        "--pam-position",
+        default=PAM_POSITION_3_LINHA,
+        help=(
+            "Posicao do PAM em relacao ao protospacer. Apenas '3linha' e suportado, "
+            "como na SpCas9. Sistemas com PAM a 5', como Cas12a, exigiriam outra logica."
+        ),
+    )
     analyze_parser.add_argument("--target-length", type=int, default=20)
     analyze_parser.add_argument("--min-gc", type=float, default=40.0)
     analyze_parser.add_argument("--max-gc", type=float, default=60.0)
@@ -47,6 +87,11 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     if args.command == "validate":
+        try:
+            validate_min_sequence_length(args.min_sequence_length)
+        except ValueError as exc:
+            print(f"Erro: {exc}", file=sys.stderr)
+            return 1
         report = validate_fasta(
             args.input,
             allow_n=args.allow_n,
@@ -62,6 +107,7 @@ def main(argv: list[str] | None = None) -> int:
                 input_path=args.input,
                 output_dir=args.output,
                 pam=args.pam.upper(),
+                pam_position=args.pam_position,
                 target_length=args.target_length,
                 min_gc=args.min_gc,
                 max_gc=args.max_gc,
@@ -69,19 +115,38 @@ def main(argv: list[str] | None = None) -> int:
                 allow_n=args.allow_n,
                 min_sequence_length=args.min_sequence_length,
             )
-            run_pipeline(config)
-        except Exception as exc:  # pragma: no cover - CLI defensive path
+            summary = run_pipeline(config)
+        except Exception as exc:
             print(f"Erro: {exc}", file=sys.stderr)
             return 1
+        _print_run_summary(summary)
         return 0
 
     parser.print_help()
     return 1
 
 
-def run_pipeline(config: PipelineConfig) -> None:
+def run_pipeline(config: PipelineConfig) -> RunSummary:
+    """Executa o pipeline garantindo que qualquer falha fique registrada no log.
+
+    Sem este tratamento, uma falha nas etapas de saida encerrava a execucao com
+    o log interrompido na validacao, sem nenhum registro do erro, o que
+    quebrava a rastreabilidade da execucao.
+    """
+
     logs_dir = config.output_dir / "logs"
     logger = configure_logging(logs_dir / "pipeline.log")
+    try:
+        return _execute_pipeline(config, logger)
+    except ValidationFailedError:
+        raise
+    except Exception:
+        logger.exception("Falha inesperada durante a execucao do pipeline.")
+        logger.info("Fim da execucao com erro.")
+        raise
+
+
+def _execute_pipeline(config: PipelineConfig, logger: Logger) -> RunSummary:
     logger.info("Inicio da execucao do AlvoCas9.")
     logger.info("Arquivo de entrada: %s", config.input_path)
     logger.info("Diretorio de saida: %s", config.output_dir)
@@ -109,7 +174,7 @@ def run_pipeline(config: PipelineConfig) -> None:
         logger.info("Fim da execucao com erro de validacao.")
         validation_path = config.output_dir / "json" / "validation.json"
         log_path = config.output_dir / "logs" / "pipeline.log"
-        raise ValueError(
+        raise ValidationFailedError(
             f"FASTA invalido. Consulte {validation_path} e {log_path}."
         )
 
@@ -121,6 +186,7 @@ def run_pipeline(config: PipelineConfig) -> None:
     scan_result = scan_records(validation.records, config)
     candidates = add_candidate_features(scan_result.candidates)
     candidates = apply_filters(candidates, config)
+    candidates = rank_candidates(candidates)
     generated_files = write_pipeline_outputs(
         config=config,
         validation=validation,
@@ -128,10 +194,35 @@ def run_pipeline(config: PipelineConfig) -> None:
         candidates=candidates,
         stats_by_sequence=scan_result.stats_by_sequence,
     )
-    logger.info("PAMs encontrados: %s", sum(stats.pams_found_total for stats in scan_result.stats_by_sequence.values()))
+    pams_found = sum(stats.pams_found_total for stats in scan_result.stats_by_sequence.values())
+    logger.info("PAMs encontrados: %s", pams_found)
     logger.info("Candidatos extraidos: %s", len(candidates))
     logger.info("Arquivos gerados: %s", ", ".join(generated_files))
     logger.info("Fim da execucao.")
+
+    return RunSummary(
+        output_dir=config.output_dir,
+        report_path=config.output_dir / "reports" / "technical_report.html",
+        sequences_read=len(validation.records),
+        validation_warnings=len(validation.warnings),
+        pams_found=pams_found,
+        candidates_extracted=len(candidates),
+        candidates_by_status=dict(
+            Counter(str(candidate["filter_status"]) for candidate in candidates)
+        ),
+    )
+
+
+def _print_run_summary(summary: RunSummary) -> None:
+    print("Analise concluida.")
+    print(f"Sequencias lidas: {summary.sequences_read}")
+    print(f"Avisos de validacao: {summary.validation_warnings}")
+    print(f"PAMs encontrados: {summary.pams_found}")
+    print(f"Candidatos extraidos: {summary.candidates_extracted}")
+    for status, count in sorted(summary.candidates_by_status.items()):
+        print(f"  {status}: {count}")
+    print(f"Resultados em: {summary.output_dir}")
+    print(f"Relatorio: {summary.report_path}")
 
 
 def _print_validation(report) -> None:

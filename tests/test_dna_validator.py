@@ -32,6 +32,33 @@ def test_validate_accepts_multiple_sequences(tmp_path: Path) -> None:
     assert report.records[1].description == "segunda"
 
 
+def test_validate_rejects_missing_file(tmp_path: Path) -> None:
+    report = validate_fasta(tmp_path / "nao_existe.fasta")
+
+    assert report.valid is False
+    assert report.records == []
+    assert any("Arquivo nao existe" in error.message for error in report.global_errors)
+
+
+def test_validate_rejects_path_that_is_not_a_file(tmp_path: Path) -> None:
+    report = validate_fasta(tmp_path)
+
+    assert report.valid is False
+    assert report.records == []
+    assert any("nao e um arquivo" in error.message for error in report.global_errors)
+
+
+def test_validate_rejects_file_without_fasta_records(tmp_path: Path) -> None:
+    fasta = tmp_path / "sem_registros.fasta"
+    fasta.write_text("\n\n\n", encoding="utf-8")
+
+    report = validate_fasta(fasta)
+
+    assert report.valid is False
+    assert report.records == []
+    assert any("Nenhum registro FASTA" in error.message for error in report.global_errors)
+
+
 def test_validate_rejects_empty_file(tmp_path: Path) -> None:
     fasta = tmp_path / "empty.fasta"
     fasta.write_text("", encoding="utf-8")
@@ -134,3 +161,25 @@ def test_validate_high_n_percent_is_warning_in_flexible_mode(tmp_path: Path) -> 
     assert report.valid is True
     messages = " ".join(warning.message for warning in report.per_record_warnings["seq1"])
     assert "Proporcao alta de N" in messages
+
+
+def test_validate_reports_tab_as_invalid_character(tmp_path: Path) -> None:
+    fasta = tmp_path / "com_tab.fasta"
+    fasta.write_text(">seq1\nACGT\tACGTACGTACGTACGT\n", encoding="utf-8")
+
+    report = validate_fasta(fasta)
+
+    assert report.valid is False
+    assert any("<tab>" in error.message for error in report.per_record_errors["seq1"])
+
+
+def test_validate_reports_space_as_invalid_character(tmp_path: Path) -> None:
+    """O leitor FASTA preserva espacos para que a validacao possa reporta-los."""
+
+    fasta = tmp_path / "com_espaco.fasta"
+    fasta.write_text(">seq1\nACGT ACGTACGTACGTACGT\n", encoding="utf-8")
+
+    report = validate_fasta(fasta)
+
+    assert report.valid is False
+    assert any("<espaco>" in error.message for error in report.per_record_errors["seq1"])

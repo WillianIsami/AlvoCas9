@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -255,11 +256,20 @@ def _record_key(record: FastaRecord, index: int) -> str:
     return record.identifier or f"record_{index}"
 
 
-def _record_to_dict(record: FastaRecord) -> dict[str, str]:
+def _record_to_dict(record: FastaRecord) -> dict[str, object]:
+    """Descreve o registro sem copiar a sequencia inteira.
+
+    Gravar a sequencia aqui transformava o ``validation.json`` em uma segunda
+    copia do FASTA de entrada: uma entrada de 50 kb gerava 50 kb so de
+    sequencia dentro do JSON. Tamanho e hash identificam o dado de forma
+    inequivoca e ocupam algumas dezenas de bytes.
+    """
+
     return {
         "identifier": record.identifier,
         "description": record.description,
-        "sequence": record.sequence,
+        "length": len(record.sequence),
+        "sequence_sha256": hashlib.sha256(record.sequence.encode("utf-8")).hexdigest(),
     }
 
 

@@ -40,6 +40,22 @@ def test_minus_strand_candidate_dataclass_maps_coordinates() -> None:
     assert candidate.protospacer_end_1based == 23
 
 
+def test_minus_strand_cut_site_maps_to_the_original_sequence() -> None:
+    """Na fita reversa, o PAM fica em coordenadas menores que o protospacer.
+
+    O corte continua a tres bases do PAM, mas agora depois dele na numeracao da
+    sequencia original.
+    """
+
+    candidates = extract_candidates_from_both_strands("seq1", "CCT" + "T" * 20, ScanConfig())
+
+    candidate = candidates[0]
+    assert candidate.strand == "-"
+    assert candidate.pam_end_1based == 3
+    assert candidate.cut_site_1based == 6
+    assert candidate.cut_site_1based - candidate.pam_end_1based == 3
+
+
 def test_minus_strand_coordinates_with_short_target_length() -> None:
     candidates = extract_candidates_from_both_strands(
         "seq1",

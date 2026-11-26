@@ -14,6 +14,10 @@ def test_gc_percent_uses_total_length() -> None:
     assert gc_percent("GGNN") == 50.0
 
 
+def test_gc_percent_of_empty_sequence_is_zero() -> None:
+    assert gc_percent("") == 0.0
+
+
 def test_max_homopolymer_run() -> None:
     assert max_homopolymer_run("AAACGGGGTT") == 4
     assert max_homopolymer_run("") == 0

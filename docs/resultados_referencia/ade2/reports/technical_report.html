@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Relatório técnico de triagem in silico CRISPR-Cas9</title>
+  <style>
+    body {
+      color: #1f2933;
+      font-family: Arial, sans-serif;
+      line-height: 1.5;
+      margin: 32px;
+      max-width: 1180px;
+    }
+    h1 {
+      color: #102a43;
+      font-size: 28px;
+      margin-bottom: 6px;
+    }
+    h2 {
+      border-bottom: 1px solid #d9e2ec;
+      color: #243b53;
+      font-size: 20px;
+      margin-top: 28px;
+      padding-bottom: 4px;
+    }
+    h3 {
+      color: #334e68;
+      font-size: 16px;
+      margin-top: 18px;
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 10px 0 18px;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #d9e2ec;
+      padding: 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f4f8;
+      color: #102a43;
+    }
+    img {
+      border: 1px solid #d9e2ec;
+      display: block;
+      height: auto;
+      margin: 12px 0 22px;
+      max-width: 900px;
+      width: 100%;
+    }
+    code {
+      background: #f0f4f8;
+      padding: 1px 4px;
+    }
+    .meta {
+      color: #52606d;
+      margin: 2px 0;
+    }
+    .limit {
+      border-left: 4px solid #52606d;
+      padding-left: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Relatório técnico de triagem in silico CRISPR-Cas9</h1>
+  <p class="meta"><strong>Projeto:</strong> AlvoCas9</p>
+  <p class="meta"><strong>Data e hora da execução:</strong> 2026-11-26 17:01:15 -03</p>
+  <p class="meta"><strong>Arquivo analisado:</strong> <code>data\real\ADE2_scerevisiae.fasta</code></p>
+
+  <h2>Configurações</h2>
+  <table><thead><tr><th>configuracao</th><th>valor</th></tr></thead><tbody><tr><td>PAM</td><td>NGG</td></tr><tr><td>posição do PAM</td><td>3linha (a 3&#x27; do protospacer)</td></tr><tr><td>target length</td><td>20</td></tr><tr><td>min GC</td><td>40.0</td></tr><tr><td>max GC</td><td>60.0</td></tr><tr><td>max homopolymer</td><td>4</td></tr><tr><td>allow N</td><td>False</td></tr></tbody></table>
+
+  <h2>Resumo das sequências</h2>
+  <table><thead><tr><th>ID</th><th>tamanho</th><th>GC%</th><th>número de N</th><th>status de validação</th></tr></thead><tbody><tr><td>ADE2_YOR128C</td><td>1716</td><td>40.21</td><td>0</td><td>válida</td></tr></tbody></table>
+
+  <h2>Resumo da validação</h2>
+  <p>Erros: 0 | Avisos: 0</p>
+  <table><thead><tr><th>level</th><th>sequence_id</th><th>message</th></tr></thead><tbody><tr><td>info</td><td></td><td>Validação concluída sem erros.</td></tr></tbody></table>
+
+  <h2>Contexto técnico</h2>
+  <p>CRISPR-Cas9 é um sistema molecular estudado em biotecnologia e bioinformática. Neste relatório, ele é tratado apenas como contexto computacional para busca de padrões em sequências de DNA.</p>
+  <p>PAM é uma pequena sequência adjacente ao possível alvo que, em sistemas Cas9, participa do reconhecimento da região. Para SpCas9, o padrão explorado neste MVP é NGG.</p>
+  <p>NGG significa que a primeira posição pode ser A, C, G ou T, seguida por duas bases G.</p>
+  <p>Um candidato in silico é uma sequência identificada por regra computacional. Ele representa um potencial sítio-alvo para triagem exploratória, sem validação experimental.</p>
+  <p>A análise é exploratória porque usa padrões de sequência e filtros básicos. Ela não substitui análise de off-target, contexto biológico, validação experimental ou revisão especializada.</p>
+
+  <h2>Resumo dos candidatos</h2>
+  <p>Total de candidatos: 140</p>
+
+  <h3>Candidatos por sequência</h3>
+  <table><thead><tr><th>sequence_id</th><th>quantidade</th></tr></thead><tbody><tr><td>ADE2_YOR128C</td><td>140</td></tr></tbody></table>
+
+  <h3>Candidatos por fita</h3>
+  <table><thead><tr><th>strand</th><th>quantidade</th></tr></thead><tbody><tr><td>+</td><td>78</td></tr><tr><td>-</td><td>62</td></tr></tbody></table>
+
+  <h3>Status dos filtros</h3>
+  <table><thead><tr><th>filter_status</th><th>quantidade</th></tr></thead><tbody><tr><td>aprovado nos filtros básicos</td><td>80</td></tr><tr><td>requer cautela</td><td>60</td></tr></tbody></table>
+
+  <h3>Estatísticas de PAM</h3>
+  <table><thead><tr><th>sequence_id</th><th>pams_found_plus</th><th>pams_found_minus</th><th>pams_found_total</th><th>pams_skipped_insufficient_upstream_plus</th><th>pams_skipped_insufficient_upstream_minus</th><th>pams_skipped_insufficient_upstream_total</th></tr></thead><tbody><tr><td>ADE2_YOR128C</td><td>80</td><td>62</td><td>142</td><td>2</td><td>0</td><td>2</td></tr></tbody></table>
+
+  <h3>Métricas gerais</h3>
+  <table><thead><tr><th>métrica</th><th>valor</th></tr></thead><tbody><tr><td>total de candidatos</td><td>140</td></tr><tr><td>sequências com candidatos</td><td>1</td></tr><tr><td>candidatos na fita +</td><td>78</td></tr><tr><td>candidatos na fita -</td><td>62</td></tr></tbody></table>
+
+  <h2>Tabela de candidatos</h2>
+  <p>A tabela mostra os 50 candidatos de maior score heuristico, de um total de 140. A listagem completa está em tables/candidates.csv e em json/candidates.json.</p>
+  <table><thead><tr><th>sequence_id</th><th>strand</th><th>protospacer_sequence_5to3</th><th>pam_sequence_5to3</th><th>protospacer_start_1based</th><th>protospacer_end_1based</th><th>pam_start_1based</th><th>pam_end_1based</th><th>cut_site_1based</th><th>full_candidate_start_1based</th><th>full_candidate_end_1based</th><th>relative_position_percent</th><th>target_length</th><th>pam_pattern</th><th>gc_percent</th><th>n_count</th><th>has_n</th><th>max_homopolymer_run</th><th>duplicate_exact_count_within_input</th><th>warnings</th><th>heuristic_score</th><th>filter_status</th></tr></thead><tbody><tr><td>ADE2_YOR128C</td><td>+</td><td>ACAGTTGGTATATTAGGAGG</td><td>GGG</td><td>13</td><td>32</td><td>33</td><td>35</td><td>29</td><td>13</td><td>35</td><td>1.4</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ATTGGGACGTATGATTGTTG</td><td>AGG</td><td>39</td><td>58</td><td>59</td><td>61</td><td>55</td><td>39</td><td>61</td><td>2.9</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TGATTGTTGAGGCAGCAAAC</td><td>AGG</td><td>50</td><td>69</td><td>70</td><td>72</td><td>66</td><td>50</td><td>72</td><td>3.6</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AACTCCAATGACCACGTTAA</td><td>TGG</td><td>130</td><td>149</td><td>150</td><td>152</td><td>146</td><td>130</td><td>152</td><td>8.2</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AGTTACCCAAAGTGTTCCTG</td><td>TGG</td><td>357</td><td>376</td><td>377</td><td>379</td><td>373</td><td>357</td><td>379</td><td>21.4</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GAGACGTCCCTATTGAATGT</td><td>TGG</td><td>391</td><td>410</td><td>411</td><td>413</td><td>407</td><td>391</td><td>413</td><td>23.4</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TTCCATTCGTCTTGAAGTCG</td><td>AGG</td><td>428</td><td>447</td><td>448</td><td>450</td><td>444</td><td>428</td><td>450</td><td>25.6</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CGTCTTGAAGTCGAGGACTT</td><td>TGG</td><td>435</td><td>454</td><td>455</td><td>457</td><td>451</td><td>435</td><td>457</td><td>26.0</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TCGAGGACTTTGGCATACGA</td><td>TGG</td><td>445</td><td>464</td><td>465</td><td>467</td><td>461</td><td>445</td><td>467</td><td>26.6</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ACTTTGGCATACGATGGAAG</td><td>AGG</td><td>451</td><td>470</td><td>471</td><td>473</td><td>467</td><td>451</td><td>473</td><td>26.9</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGAAATGATTCCGGAAGCTT</td><td>TGG</td><td>495</td><td>514</td><td>515</td><td>517</td><td>511</td><td>495</td><td>517</td><td>29.5</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGAAGCTTTGGAAGTACTGA</td><td>AGG</td><td>507</td><td>526</td><td>527</td><td>529</td><td>523</td><td>507</td><td>529</td><td>30.2</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TTATGCGCCTGCTAGAGTTC</td><td>CGG</td><td>666</td><td>685</td><td>686</td><td>688</td><td>682</td><td>666</td><td>688</td><td>39.5</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TCCGGACTCCGTTCAACTTA</td><td>AGG</td><td>684</td><td>703</td><td>704</td><td>706</td><td>700</td><td>684</td><td>706</td><td>40.5</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TCAACTTAAGGCGAAGTTGT</td><td>TGG</td><td>696</td><td>715</td><td>716</td><td>718</td><td>712</td><td>696</td><td>718</td><td>41.2</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ATCAAATCTTTTCCCGGTTG</td><td>TGG</td><td>730</td><td>749</td><td>750</td><td>752</td><td>746</td><td>730</td><td>752</td><td>43.2</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>4</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TTTCCCGGTTGTGGTATATT</td><td>TGG</td><td>739</td><td>758</td><td>759</td><td>761</td><td>755</td><td>739</td><td>761</td><td>43.7</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CGGTTGTGGTATATTTGGTG</td><td>TGG</td><td>744</td><td>763</td><td>764</td><td>766</td><td>760</td><td>744</td><td>766</td><td>44.0</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AGAAACTTGCGAAAGAGCAT</td><td>TGG</td><td>996</td><td>1015</td><td>1016</td><td>1018</td><td>1012</td><td>996</td><td>1018</td><td>58.7</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GAAAGAGCATTGGCGACTCC</td><td>AGG</td><td>1006</td><td>1025</td><td>1026</td><td>1028</td><td>1022</td><td>1006</td><td>1028</td><td>59.3</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGTTCCTCAGTGTACTTATA</td><td>TGG</td><td>1027</td><td>1046</td><td>1047</td><td>1049</td><td>1043</td><td>1027</td><td>1049</td><td>60.5</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TATTATTGCCTCCAGTATGG</td><td>CGG</td><td>1089</td><td>1108</td><td>1109</td><td>1111</td><td>1105</td><td>1089</td><td>1111</td><td>64.1</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GTATGGCGGAATGTGAACAA</td><td>AGG</td><td>1103</td><td>1122</td><td>1123</td><td>1125</td><td>1119</td><td>1103</td><td>1125</td><td>64.9</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CAAAGGCTGAACTACATTAC</td><td>AGG</td><td>1120</td><td>1139</td><td>1140</td><td>1142</td><td>1136</td><td>1120</td><td>1142</td><td>65.9</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AATCTCTGTCGCTCAAAAGT</td><td>TGG</td><td>1164</td><td>1183</td><td>1184</td><td>1186</td><td>1180</td><td>1164</td><td>1186</td><td>68.5</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>4</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TGTCGCTCAAAAGTTGGACT</td><td>TGG</td><td>1170</td><td>1189</td><td>1190</td><td>1192</td><td>1186</td><td>1170</td><td>1192</td><td>68.8</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>4</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AAAGTTGGACTTGGAAGCAA</td><td>TGG</td><td>1179</td><td>1198</td><td>1199</td><td>1201</td><td>1195</td><td>1179</td><td>1201</td><td>69.3</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGAAGCAATGGTCAAACCAT</td><td>TGG</td><td>1191</td><td>1210</td><td>1211</td><td>1213</td><td>1207</td><td>1191</td><td>1213</td><td>70.0</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GCAATGGTCAAACCATTGGT</td><td>TGG</td><td>1195</td><td>1214</td><td>1215</td><td>1217</td><td>1211</td><td>1195</td><td>1217</td><td>70.3</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ACCATTGGTTGGAATCATCA</td><td>TGG</td><td>1206</td><td>1225</td><td>1226</td><td>1228</td><td>1222</td><td>1206</td><td>1228</td><td>70.9</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CCATTGGTTGGAATCATCAT</td><td>GGG</td><td>1207</td><td>1226</td><td>1227</td><td>1229</td><td>1223</td><td>1207</td><td>1229</td><td>71.0</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGGATCAGACTCTGACTTGC</td><td>CGG</td><td>1227</td><td>1246</td><td>1247</td><td>1249</td><td>1243</td><td>1227</td><td>1249</td><td>72.1</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGTAATGTCTGCCGCATGTG</td><td>CGG</td><td>1248</td><td>1267</td><td>1268</td><td>1270</td><td>1264</td><td>1248</td><td>1270</td><td>73.4</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CTGCTCATAGAACTCCACAT</td><td>AGG</td><td>1313</td><td>1332</td><td>1333</td><td>1335</td><td>1329</td><td>1313</td><td>1335</td><td>77.2</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GCTATTTCCGCAAGCAAGCG</td><td>TGG</td><td>1348</td><td>1367</td><td>1368</td><td>1370</td><td>1364</td><td>1348</td><td>1370</td><td>79.2</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AAAACAATTATCGCTGGAGC</td><td>TGG</td><td>1375</td><td>1394</td><td>1395</td><td>1397</td><td>1391</td><td>1375</td><td>1397</td><td>80.8</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>4</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ACAATTATCGCTGGAGCTGG</td><td>TGG</td><td>1378</td><td>1397</td><td>1398</td><td>1400</td><td>1394</td><td>1378</td><td>1400</td><td>80.9</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CAATTATCGCTGGAGCTGGT</td><td>GGG</td><td>1379</td><td>1398</td><td>1399</td><td>1401</td><td>1395</td><td>1379</td><td>1401</td><td>81.0</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>AATTATCGCTGGAGCTGGTG</td><td>GGG</td><td>1380</td><td>1399</td><td>1400</td><td>1402</td><td>1396</td><td>1380</td><td>1402</td><td>81.1</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GGCTGCTCACTTGCCAGGTA</td><td>TGG</td><td>1401</td><td>1420</td><td>1421</td><td>1423</td><td>1417</td><td>1401</td><td>1423</td><td>82.3</td><td>20</td><td>NGG</td><td>60.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TGCTCACTTGCCAGGTATGG</td><td>TGG</td><td>1404</td><td>1423</td><td>1424</td><td>1426</td><td>1420</td><td>1404</td><td>1426</td><td>82.5</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>ATGACACCACTTCCTGTCAT</td><td>CGG</td><td>1432</td><td>1451</td><td>1452</td><td>1454</td><td>1448</td><td>1432</td><td>1454</td><td>84.1</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>GTCATCGGTGTGCCCGTAAA</td><td>AGG</td><td>1447</td><td>1466</td><td>1467</td><td>1469</td><td>1463</td><td>1447</td><td>1469</td><td>85.0</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TCAATTGTGCAAATGCCTAG</td><td>AGG</td><td>1501</td><td>1520</td><td>1521</td><td>1523</td><td>1517</td><td>1501</td><td>1523</td><td>88.1</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>TAGTACGAACGCTGCGCTGT</td><td>TGG</td><td>1554</td><td>1573</td><td>1574</td><td>1576</td><td>1570</td><td>1554</td><td>1576</td><td>91.2</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>+</td><td>CTGTTGGCTGTCAGACTGCT</td><td>TGG</td><td>1570</td><td>1589</td><td>1590</td><td>1592</td><td>1586</td><td>1570</td><td>1592</td><td>92.1</td><td>20</td><td>NGG</td><td>55.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>-</td><td>GAGTTGCTTATTTGTTTGGC</td><td>AGG</td><td>115</td><td>134</td><td>112</td><td>114</td><td>117</td><td>112</td><td>134</td><td>7.2</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>-</td><td>GGAGCCATTAACGTGGTCAT</td><td>TGG</td><td>137</td><td>156</td><td>134</td><td>136</td><td>139</td><td>134</td><td>156</td><td>8.4</td><td>20</td><td>NGG</td><td>50.0</td><td>0</td><td>False</td><td>2</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>-</td><td>TGGAAAAGGAGCCATTAACG</td><td>TGG</td><td>144</td><td>163</td><td>141</td><td>143</td><td>146</td><td>141</td><td>163</td><td>8.9</td><td>20</td><td>NGG</td><td>45.0</td><td>0</td><td>False</td><td>4</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr><tr><td>ADE2_YOR128C</td><td>-</td><td>TTGTTCCACAGGAACACTTT</td><td>GGG</td><td>365</td><td>384</td><td>362</td><td>364</td><td>367</td><td>362</td><td>384</td><td>21.7</td><td>20</td><td>NGG</td><td>40.0</td><td>0</td><td>False</td><td>3</td><td>1</td><td></td><td>100</td><td>aprovado nos filtros básicos</td></tr></tbody></table>
+  <p>A coluna <code>cut_site_1based</code> indica a posição da base imediatamente anterior ao corte previsto, na sequência original. O corte ocorre entre essa posição e a seguinte. É uma premissa do modelo para SpCas9, que corta cerca de 3 pares de base antes do PAM, e não uma medição.</p>
+  <p>A coluna <code>relative_position_percent</code> indica onde o ponto médio do candidato está na sequência, em porcentagem. É uma indicação de posição, não um critério de qualidade, e não entra no score.</p>
+
+  <h2>Gráficos</h2>
+  <img alt="Candidatos por sequência" src="../figures/candidates_per_sequence.png">
+  <img alt="Distribuição de GC nos candidatos" src="../figures/gc_distribution_candidates.png">
+  <img alt="Resumo dos status dos filtros" src="../figures/filter_status_summary.png">
+  <img alt="Distribuição dos candidatos ao longo da sequência" src="../figures/candidate_density.png">
+
+  <h2>Interpretação conservadora</h2>
+  <p>Os resultados devem ser interpretados como triagem exploratória. Os filtros básicos organizam candidatos in silico por critérios computacionais simples, como faixa de GC, presença de N, homopolímeros e duplicação exata no conjunto de entrada. O score heurístico serve apenas para priorização didática e rastreável dentro do relatório.</p>
+
+  <h2>Limitações técnicas, biológicas e éticas</h2>
+  <p class="limit">Os resultados apresentados representam uma triagem computacional inicial baseada em padrões de sequência. Os candidatos identificados não constituem recomendação experimental, clínica ou terapêutica. A seleção real de guias CRISPR-Cas9 exige análises adicionais, incluindo avaliação de off-target em genoma de referência, contexto biológico, validação experimental e revisão especializada.</p>
+  <ul>
+    <li>O pipeline não executa análise completa de off-target em genoma de referência.</li>
+    <li>O pipeline não considera contexto cromossômico, expressão gênica, cromatina ou anotação funcional.</li>
+    <li>A presença de PAM não confirma atividade biológica.</li>
+    <li>Os filtros básicos não substituem ferramentas especializadas nem revisão por especialistas.</li>
+    <li>O relatório não deve ser usado como protocolo experimental.</li>
+  </ul>
+
+  <h2>Arquivos gerados</h2>
+  <ul>
+    <li><code>tables/sequences_summary.csv</code></li>
+<li><code>tables/candidates.csv</code></li>
+<li><code>tables/validation_summary.csv</code></li>
+<li><code>tables/candidates.bed</code></li>
+<li><code>json/validation.json</code></li>
+<li><code>json/candidates.json</code></li>
+<li><code>json/run_config.json</code></li>
+<li><code>figures/candidates_per_sequence.png</code></li>
+<li><code>figures/gc_distribution_candidates.png</code></li>
+<li><code>figures/filter_status_summary.png</code></li>
+<li><code>figures/candidate_density.png</code></li>
+<li><code>reports/technical_report.html</code></li>
+<li><code>reports/technical_report.md</code></li>
+<li><code>logs/pipeline.log</code></li>
+  </ul>
+</body>
+</html>

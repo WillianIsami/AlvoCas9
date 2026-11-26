@@ -59,7 +59,18 @@ A análise é exploratória porque usa padrões de sequência e filtros básicos
 
 ## Tabela de candidatos
 
+{{ candidates_table_note }}
+
 {{ candidates_table }}
+
+A coluna `cut_site_1based` indica a posição da base imediatamente anterior ao
+corte previsto, na sequência original. O corte ocorre entre essa posição e a
+seguinte. É uma premissa do modelo para SpCas9, que corta cerca de 3 pares de
+base antes do PAM, e não uma medição.
+
+A coluna `relative_position_percent` indica onde o ponto médio do candidato
+está na sequência, em porcentagem. É uma indicação de posição, não um critério
+de qualidade, e não entra no score.
 
 ## Gráficos
 
@@ -68,6 +79,8 @@ A análise é exploratória porque usa padrões de sequência e filtros básicos
 ![Distribuição de GC nos candidatos](../figures/gc_distribution_candidates.png)
 
 ![Resumo dos status dos filtros](../figures/filter_status_summary.png)
+
+![Distribuição dos candidatos ao longo da sequência](../figures/candidate_density.png)
 
 ## Interpretação conservadora
 

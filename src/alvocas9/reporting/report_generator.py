@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import html
 import json
+import platform
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from alvocas9 import __version__
 from alvocas9.config import PipelineConfig
 from alvocas9.core.scanner import ScanStats
 from alvocas9.validation.dna_validator import ValidationReport
@@ -16,6 +19,17 @@ from alvocas9.visualization.plots import create_plots
 
 REPORT_TITLE = "Relatório técnico de triagem in silico CRISPR-Cas9"
 PROJECT_NAME = "AlvoCas9"
+REPORT_TIMEZONE = "America/Sao_Paulo"
+
+# Numero maximo de candidatos exibidos na tabela do relatorio. As tabelas CSV e
+# JSON continuam completas. Sem este limite, uma entrada de 50 kb gera um
+# relatorio HTML de quase 2 MB, com mais de seis mil linhas de tabela, que
+# nenhum navegador apresenta de forma util.
+REPORT_MAX_CANDIDATE_ROWS = 50
+
+# O formato BED usa score inteiro de 0 a 1000, enquanto o score heuristico do
+# projeto vai de 0 a 100.
+BED_SCORE_MAX = 1000
 LIMITATION_TEXT = (
     "Os resultados apresentados representam uma triagem computacional inicial baseada em "
     "padrões de sequência. Os candidatos identificados não constituem recomendação "
@@ -24,11 +38,18 @@ LIMITATION_TEXT = (
     "contexto biológico, validação experimental e revisão especializada."
 )
 
+# Frases afirmativas que o relatorio nunca deve conter. A verificacao e por
+# frase, e nao por palavra isolada, porque o texto obrigatorio de limitacao usa
+# as palavras "clinica" e "terapeutica" justamente para negar essas aplicacoes.
 FORBIDDEN_REPORT_TERMS = [
     "guia recomendado",
+    "guia validado",
     "alvo seguro",
+    "alvo recomendado",
     "aplicação clínica",
+    "uso terapêutico",
     "eficiência garantida",
+    "pronto para uso experimental",
 ]
 
 CANDIDATE_COLUMNS = [
@@ -40,8 +61,10 @@ CANDIDATE_COLUMNS = [
     "protospacer_end_1based",
     "pam_start_1based",
     "pam_end_1based",
+    "cut_site_1based",
     "full_candidate_start_1based",
     "full_candidate_end_1based",
+    "relative_position_percent",
     "target_length",
     "pam_pattern",
     "gc_percent",
@@ -63,7 +86,13 @@ def write_pipeline_outputs(
     candidates: list[dict[str, object]],
     stats_by_sequence: dict[str, ScanStats],
 ) -> list[str]:
-    """Escreve tabelas, JSON, graficos e relatorios."""
+    """Escreve tabelas, JSON, graficos e relatorios.
+
+    Devolve a lista dos arquivos **efetivamente gravados**, conferida em disco.
+    Antes esta funcao devolvia uma lista fixa do que deveria existir, de modo
+    que o log afirmava ter gerado arquivos sem verificar nenhum, o que
+    contradizia a rastreabilidade que o projeto defende.
+    """
 
     output_dir = config.output_dir
     tables_dir = output_dir / "tables"
@@ -75,17 +104,26 @@ def write_pipeline_outputs(
         directory.mkdir(parents=True, exist_ok=True)
 
     serializable_candidates = _serializable_candidates(candidates)
-    generated_files = _expected_generated_files()
+    escritos: list[Path] = [
+        _write_csv(tables_dir / "sequences_summary.csv", sequence_summary),
+        _write_csv(tables_dir / "candidates.csv", serializable_candidates, CANDIDATE_COLUMNS),
+        _write_csv(tables_dir / "validation_summary.csv", _validation_rows(validation)),
+        _write_bed(tables_dir / "candidates.bed", serializable_candidates),
+        _write_json(json_dir / "validation.json", validation.to_dict()),
+        _write_json(json_dir / "candidates.json", serializable_candidates),
+        _write_json(json_dir / "run_config.json", _run_config_payload(config)),
+    ]
+    escritos.extend(create_plots(candidates, figures_dir))
 
-    _write_csv(tables_dir / "sequences_summary.csv", sequence_summary)
-    _write_csv(tables_dir / "candidates.csv", serializable_candidates, CANDIDATE_COLUMNS)
-    _write_csv(tables_dir / "validation_summary.csv", _validation_rows(validation))
+    report_html = reports_dir / "technical_report.html"
+    report_md = reports_dir / "technical_report.md"
+    log_file = logs_dir / "pipeline.log"
 
-    _write_json(json_dir / "validation.json", validation.to_dict())
-    _write_json(json_dir / "candidates.json", serializable_candidates)
-    _write_json(json_dir / "run_config.json", config.to_dict())
-
-    create_plots(candidates, figures_dir)
+    # Os relatorios precisam listar a si mesmos, entao entram na lista antes de
+    # serem gravados. A conferencia em disco acontece no final.
+    previstos = escritos + [report_html, report_md]
+    if log_file.exists():
+        previstos.append(log_file)
 
     context = _build_report_context(
         config=config,
@@ -93,15 +131,18 @@ def write_pipeline_outputs(
         sequence_summary=sequence_summary,
         candidates=serializable_candidates,
         stats_by_sequence=stats_by_sequence,
-        generated_files=generated_files,
+        generated_files=[_caminho_relativo(path, output_dir) for path in previstos],
     )
     markdown = _render_template(_template_path("technical_report.md.j2"), context)
     rendered_html = _render_template(_template_path("technical_report.html.j2"), context)
     _assert_report_language(markdown)
     _assert_report_language(rendered_html)
-    (reports_dir / "technical_report.md").write_text(markdown, encoding="utf-8")
-    (reports_dir / "technical_report.html").write_text(rendered_html, encoding="utf-8")
-    return generated_files
+    report_md.write_text(markdown, encoding="utf-8")
+    report_html.write_text(rendered_html, encoding="utf-8")
+
+    return [
+        _caminho_relativo(path, output_dir) for path in previstos if path.is_file()
+    ]
 
 
 def write_validation_failure_outputs(
@@ -109,13 +150,73 @@ def write_validation_failure_outputs(
     config: PipelineConfig,
     validation: ValidationReport,
 ) -> list[str]:
-    """Escreve artefatos mínimos quando erros críticos impedem a análise."""
+    """Escreve artefatos mínimos quando erros críticos impedem a análise.
 
-    json_dir = config.output_dir / "json"
+    Como em ``write_pipeline_outputs``, a lista devolvida é conferida em disco,
+    e não fixa no código.
+    """
+
+    output_dir = config.output_dir
+    json_dir = output_dir / "json"
     json_dir.mkdir(parents=True, exist_ok=True)
-    _write_json(json_dir / "validation.json", validation.to_dict())
-    _write_json(json_dir / "run_config.json", config.to_dict())
-    return ["json/validation.json", "json/run_config.json", "logs/pipeline.log"]
+    previstos = [
+        _write_json(json_dir / "validation.json", validation.to_dict()),
+        _write_json(json_dir / "run_config.json", _run_config_payload(config)),
+        output_dir / "logs" / "pipeline.log",
+    ]
+    return [_caminho_relativo(path, output_dir) for path in previstos if path.is_file()]
+
+
+def _run_config_payload(config: PipelineConfig) -> dict[str, object]:
+    """Monta o conteudo do ``run_config.json``.
+
+    Alem dos parametros da execucao, registra o que e preciso para repeti-la
+    com seguranca: a versao do AlvoCas9, a versao do Python, a data e hora, e o
+    hash SHA-256 do arquivo de entrada.
+
+    Sem esses campos, dois ``run_config.json`` identicos podiam corresponder a
+    execucoes diferentes, sobre arquivos diferentes ou versoes diferentes do
+    software, o que esvaziava a reprodutibilidade que o projeto defende.
+
+    O campo ``executed_at`` muda a cada execucao, por definicao. E o unico
+    campo de saida que nao e deterministico, junto com o carimbo do relatorio.
+    """
+
+    payload = config.to_dict()
+    payload["alvocas9_version"] = __version__
+    payload["python_version"] = platform.python_version()
+    payload["executed_at"] = _format_generated_at()
+    payload["input_sha256"] = _sha256_do_arquivo(config.input_path)
+    return payload
+
+
+def _sha256_do_arquivo(path: Path) -> str | None:
+    """SHA-256 do arquivo, ou ``None`` quando ele nao pode ser lido.
+
+    Devolver ``None`` em vez de falhar mantem o registro possivel mesmo quando
+    a entrada desapareceu entre a leitura e a escrita das saidas.
+    """
+
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def _format_generated_at(timezone_key: str = REPORT_TIMEZONE) -> str:
+    """Formata a data e hora da execucao do relatorio.
+
+    Usa o fuso brasileiro quando a base de fusos IANA esta disponivel. Em
+    sistemas sem essa base, como o Windows sem o pacote ``tzdata``, usa o fuso
+    local e registra o deslocamento numerico. Assim, a ausencia de uma
+    dependencia opcional nao interrompe a geracao dos relatorios depois de o
+    pipeline ja ter gravado tabelas, JSON e graficos.
+    """
+
+    try:
+        return datetime.now(ZoneInfo(timezone_key)).strftime("%Y-%m-%d %H:%M:%S %Z")
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        return datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
 
 
 def _build_report_context(
@@ -127,7 +228,9 @@ def _build_report_context(
     stats_by_sequence: dict[str, ScanStats],
     generated_files: list[str],
 ) -> dict[str, str]:
-    generated_at = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime("%Y-%m-%d %H:%M:%S %Z")
+    generated_at = _format_generated_at()
+    visible_candidates = candidates[:REPORT_MAX_CANDIDATE_ROWS]
+    candidates_table_note = _candidates_table_note(len(candidates), len(visible_candidates))
     validation_rows = _validation_rows(validation)
     sequence_rows = _sequence_report_rows(sequence_summary, validation)
     candidate_summary = _candidate_summary_rows(candidates)
@@ -152,7 +255,8 @@ def _build_report_context(
         "filter_status_table": _markdown_table(_counter_rows(Counter(str(row["filter_status"]) for row in candidates), "filter_status")),
         "pam_stats_table": _markdown_table(stats_rows),
         "candidate_summary_table": _markdown_table(candidate_summary),
-        "candidates_table": _markdown_table(candidates),
+        "candidates_table": _markdown_table(visible_candidates),
+        "candidates_table_note": candidates_table_note,
         "generated_files_list": "\n".join(f"- `{item}`" for item in generated_files),
         "limitation_text": LIMITATION_TEXT,
     }
@@ -180,7 +284,10 @@ def _build_report_context(
             "filter_status_table": _html_table(_counter_rows(Counter(str(row["filter_status"]) for row in candidates), "filter_status")),
             "pam_stats_table": _html_table(stats_rows),
             "candidate_summary_table": _html_table(candidate_summary),
-            "candidates_table": _html_table(candidates),
+            "candidates_table": _html_table(visible_candidates),
+            "candidates_table_note": (
+                f"<p>{html.escape(candidates_table_note)}</p>" if candidates_table_note else ""
+            ),
             "generated_files_list": "\n".join(f"<li><code>{html.escape(item)}</code></li>" for item in generated_files),
         }
     )
@@ -197,6 +304,7 @@ def _build_report_context(
 def _config_rows(config: PipelineConfig) -> list[dict[str, object]]:
     return [
         {"configuracao": "PAM", "valor": config.pam},
+        {"configuracao": "posição do PAM", "valor": f"{config.pam_position} (a 3' do protospacer)"},
         {"configuracao": "target length", "valor": config.target_length},
         {"configuracao": "min GC", "valor": config.min_gc},
         {"configuracao": "max GC", "valor": config.max_gc},
@@ -248,6 +356,18 @@ def _candidate_summary_rows(candidates: list[dict[str, object]]) -> list[dict[st
     ]
 
 
+def _candidates_table_note(total: int, exibidos: int) -> str:
+    """Texto que avisa que a tabela do relatorio foi truncada."""
+
+    if total <= exibidos:
+        return ""
+    return (
+        f"A tabela mostra os {exibidos} candidatos de maior score heuristico, "
+        f"de um total de {total}. A listagem completa está em "
+        "tables/candidates.csv e em json/candidates.json."
+    )
+
+
 def _counter_rows(counter: Counter[str], label: str) -> list[dict[str, object]]:
     return [{label: key, "quantidade": value} for key, value in sorted(counter.items())]
 
@@ -263,7 +383,53 @@ def _serializable_candidates(candidates: list[dict[str, object]]) -> list[dict[s
     return rows
 
 
-def _write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str] | None = None) -> None:
+def _write_bed(path: Path, candidates: list[dict[str, object]]) -> Path:
+    """Escreve os candidatos em BED, convertendo o sistema de coordenadas.
+
+    O projeto usa coordenadas **1-based inclusivas** e o BED usa **0-based
+    semiabertas**. A conversao e:
+
+        inicio_bed = inicio_1based - 1
+        fim_bed    = fim_1based
+
+    O fim nao muda de valor porque o limite semiaberto do BED coincide
+    numericamente com o limite inclusivo 1-based: um intervalo que vai da base
+    1 a base 23 em 1-based inclusivo e [0, 23) em 0-based semiaberto.
+
+    O arquivo tem seis colunas, sem cabecalho, separadas por tabulacao, e pode
+    ser carregado em navegadores genomicos. A ordem das linhas acompanha a do
+    ``candidates.csv``, ou seja, por score decrescente.
+    """
+
+    linhas: list[str] = []
+    for indice, candidato in enumerate(candidates, start=1):
+        inicio_1based = int(candidato["full_candidate_start_1based"])
+        fim_1based = int(candidato["full_candidate_end_1based"])
+        score = min(int(candidato["heuristic_score"]) * 10, BED_SCORE_MAX)
+        linhas.append(
+            "\t".join(
+                [
+                    str(candidato["sequence_id"]),
+                    str(inicio_1based - 1),
+                    str(fim_1based),
+                    f"{candidato['sequence_id']}_cand{indice:04d}",
+                    str(score),
+                    str(candidato["strand"]),
+                ]
+            )
+        )
+
+    path.write_text("\n".join(linhas) + ("\n" if linhas else ""), encoding="utf-8")
+    return path
+
+
+def _caminho_relativo(path: Path, output_dir: Path) -> str:
+    """Caminho do arquivo relativo ao diretorio de saida, com barras normais."""
+
+    return path.relative_to(output_dir).as_posix()
+
+
+def _write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str] | None = None) -> Path:
     if fieldnames is None:
         fieldnames = sorted({key for row in rows for key in row.keys()})
     with path.open("w", encoding="utf-8", newline="") as handle:
@@ -271,10 +437,12 @@ def _write_csv(path: Path, rows: list[dict[str, object]], fieldnames: list[str] 
         writer.writeheader()
         for row in rows:
             writer.writerow({key: row.get(key, "") for key in fieldnames})
+    return path
 
 
-def _write_json(path: Path, data: object) -> None:
+def _write_json(path: Path, data: object) -> Path:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
 
 
 def _validation_rows(validation: ValidationReport) -> list[dict[str, object]]:
@@ -284,23 +452,6 @@ def _validation_rows(validation: ValidationReport) -> list[dict[str, object]]:
     if not rows:
         rows.append({"level": "info", "sequence_id": "", "message": "Validação concluída sem erros."})
     return rows
-
-
-def _expected_generated_files() -> list[str]:
-    return [
-        "tables/sequences_summary.csv",
-        "tables/candidates.csv",
-        "tables/validation_summary.csv",
-        "json/validation.json",
-        "json/candidates.json",
-        "json/run_config.json",
-        "figures/candidates_per_sequence.png",
-        "figures/gc_distribution_candidates.png",
-        "figures/filter_status_summary.png",
-        "reports/technical_report.html",
-        "reports/technical_report.md",
-        "logs/pipeline.log",
-    ]
 
 
 def _template_path(filename: str) -> Path:
@@ -328,6 +479,8 @@ def _markdown_table(rows: list[dict[str, object]]) -> str:
 
 
 def _markdown_cell(value: object) -> str:
+    if value is None:
+        return ""
     return str(value).replace("\n", " ").replace("|", "\\|")
 
 
@@ -340,7 +493,10 @@ def _html_table(rows: object) -> str:
     parts.append("</tr></thead><tbody>")
     for row in rows:
         parts.append("<tr>")
-        parts.extend(f"<td>{html.escape(str(row.get(column, '')))}</td>" for column in columns)
+        parts.extend(
+            f"<td>{html.escape('' if row.get(column) is None else str(row.get(column)))}</td>"
+            for column in columns
+        )
         parts.append("</tr>")
     parts.append("</tbody></table>")
     return "".join(parts)
