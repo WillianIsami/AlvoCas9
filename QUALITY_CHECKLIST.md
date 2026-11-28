@@ -149,7 +149,7 @@ python scripts/verificar_coordenadas.py
 Resultado:
 
 ```text
-TOTAL: 265 candidato(s) conferido(s), 0 divergencia(s).
+TOTAL: 405 candidato(s) conferido(s), 0 divergencia(s).
 RESULTADO: OK. Todas as coordenadas conferem com a sequencia original.
 ```
 

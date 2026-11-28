@@ -11,6 +11,9 @@ verificam a mesma logica por dentro. O mapeamento de coordenadas da fita
 reversa complementar e o ponto do projeto onde um erro passaria despercebido:
 o candidato pareceria valido e estaria na posicao errada.
 
+A conferencia cobre os arquivos de exemplo, a sequencia biologica real curada em
+``data/real`` e uma sequencia aleatoria de tamanho configuravel.
+
 Este script deve ser executado depois de qualquer alteracao no scanner. O
 resultado esperado e zero divergencia e codigo de saida 0.
 
@@ -33,6 +36,7 @@ from alvocas9.io.fasta_reader import read_fasta
 
 ROOT = Path(__file__).resolve().parents[1]
 EXEMPLOS = ROOT / "data" / "examples"
+REAIS = ROOT / "data" / "real"
 
 
 def conferir(sequencia: str, candidato: Candidate) -> list[str]:
@@ -131,6 +135,20 @@ def main(argv: list[str] | None = None) -> int:
         for registro in leitura.records:
             if not registro.sequence or not set(registro.sequence) <= set("ACGTN"):
                 continue
+            candidatos, divergencias = verificar_sequencia(
+                f"{caminho.name}:{registro.sequence_id}", registro.sequence, config
+            )
+            total_candidatos += candidatos
+            total_divergencias += divergencias
+
+    # A sequencia real e o caso que mais importa conferir: tem as duas fitas
+    # povoadas e tamanho suficiente para que um erro de mapeamento na fita
+    # reversa complementar nao se esconda em coincidencia.
+    print()
+    print("== Sequencia biologica real")
+    for caminho in sorted(REAIS.glob("*.fasta")):
+        leitura = read_fasta(caminho)
+        for registro in leitura.records:
             candidatos, divergencias = verificar_sequencia(
                 f"{caminho.name}:{registro.sequence_id}", registro.sequence, config
             )
